@@ -1,0 +1,18 @@
+CARA BUAT INSTALLER WINDOWS LEWAT GITHUB
+
+1. Buat akun di github.com (kalau belum punya), lalu buat repository baru (New repository), misal nama: tata-kartu-pelajar.
+2. Di halaman repository klik "uploading an existing file", lalu seret SEMUA isi folder ini (termasuk folder .github).
+   Kalau folder .github tidak ikut terupload, buat manual lewat "Add file > Create new file", ketik nama:
+   .github/workflows/build.yml  lalu tempel isi file build.yml.
+3. Klik Commit changes.
+4. Buka tab Actions > "Build Windows" > Run workflow. Tunggu sekitar 3-6 menit sampai centang hijau.
+5. Buka run yang selesai, di bagian Artifacts unduh "TataKartuPelajar-Windows" (zip).
+   Isinya:
+   - Tata Kartu Pelajar Setup 1.0.0.exe   (installer)
+   - Tata Kartu Pelajar 1.0.0.exe         (portabel, tanpa install)
+6. Ekstrak zip, jalankan installer di Windows. Kalau muncul peringatan SmartScreen, klik "More info" lalu "Run anyway"
+   (muncul karena aplikasinya belum ditandatangani).
+
+Mau versi rilis bersih di tab Releases: buat tag, misal v1.0.0, nanti file .exe otomatis terlampir.
+
+Coba di komputer sendiri (opsional, butuh Node.js): npm install lalu npm start

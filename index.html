@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="id">
+<head>
+<title>Tata Kartu Pelajar</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* Layout: panel kontrol di kiri, meja potong (cutting mat) hijau berkisi di kanan tempat lembar kertas dipratinjau.
+   Kertas selalu putih, kartu dipotong rapi dengan garis tipis. */
+:root {
+  --bg: #f2f5f3;
+  --panel: #ffffff;
+  --ink: #17201d;
+  --muted: #566660;
+  --line: #dbe2df;
+  --line-strong: #b9c5c0;
+  --field: #f7f9f8;
+  --accent: #1f4fd1;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3eafc;
+  --mat: #cadfd2;
+  --mat-line: #bcd3c4;
+  --mat-strong: #a9c5b4;
+  --mat-ink: #1f2f28;
+  --warn: #a8480a;
+  --thumb: #eef2f0;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111614;
+    --panel: #181e1b;
+    --ink: #e6ece9;
+    --muted: #94a39c;
+    --line: #2a3430;
+    --line-strong: #3b4943;
+    --field: #1d2421;
+    --accent: #8aa8ff;
+    --accent-ink: #0d1330;
+    --accent-soft: #212c4d;
+    --mat: #1b2823;
+    --mat-line: #23342d;
+    --mat-strong: #2c4137;
+    --mat-ink: #bccbc4;
+    --warn: #f0a35a;
+    --thumb: #222c28;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111614;
+  --panel: #181e1b;
+  --ink: #e6ece9;
+  --muted: #94a39c;
+  --line: #2a3430;
+  --line-strong: #3b4943;
+  --field: #1d2421;
+  --accent: #8aa8ff;
+  --accent-ink: #0d1330;
+  --accent-soft: #212c4d;
+  --mat: #1b2823;
+  --mat-line: #23342d;
+  --mat-strong: #2c4137;
+  --mat-ink: #bccbc4;
+  --warn: #f0a35a;
+  --thumb: #222c28;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 44px;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.top { max-width: 1240px; margin: 0 auto 18px; }
+.top h1 { font-family: var(--font-head); font-weight: 600; font-size: clamp(1.6rem, 4.5vw, 2.2rem); line-height: 1.15; margin: 0 0 6px; letter-spacing: -0.01em; text-wrap: balance; }
+.top p { margin: 0; color: var(--muted); max-width: 60ch; }
+
+.app { display: grid; gap: 18px; max-width: 1240px; margin: 0 auto; }
+@media (min-width: 900px) {
+  .app { grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); align-items: start; }
+}
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.block { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.lbl { font-size: 11px; line-height: 1; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.sub { font-size: 12px; font-weight: 500; color: var(--muted); margin: 14px 0 8px; }
+.sub:first-of-type { margin-top: 0; }
+
+/* unggah */
+.drop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 18px 12px; border: 1.5px dashed var(--line-strong); border-radius: 8px; background: var(--field); cursor: pointer; transition: border-color .15s, background .15s; }
+.drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drop svg { color: var(--accent); }
+.drop strong { font-weight: 600; }
+.drop span { font-size: 13px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+.cards { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.card { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: start; padding-top: 10px; border-top: 1px solid var(--line); }
+.card:first-child { padding-top: 0; border-top: 0; }
+.thumb { width: 64px; height: 44px; border: 1px solid var(--line); border-radius: 4px; background: var(--thumb); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.thumb img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.cbody { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.ctop { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cname { font-weight: 500; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.badge { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 1px 6px; }
+.cctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clabel { font-size: 12px; color: var(--muted); }
+.step { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; background: var(--field); }
+.step .ib { border: 0; border-radius: 0; }
+.step input { width: 44px; height: 36px; border: 0; background: transparent; text-align: center; font-family: var(--font-mono); font-size: 14px; -moz-appearance: textfield; appearance: textfield; }
+.step input::-webkit-inner-spin-button, .step input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.ib { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--line-strong); border-radius: 6px; background: transparent; cursor: pointer; color: var(--ink); }
+.ib:hover { background: var(--accent-soft); }
+.ib[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.empty { color: var(--muted); font-size: 14px; margin: 14px 0 0; }
+
+/* pengaturan */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > span { font-size: 12px; color: var(--muted); }
+.field.full { grid-column: 1 / -1; }
+.inwrap { position: relative; }
+.inwrap em { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--muted); pointer-events: none; font-family: var(--font-mono); }
+.field input[type="number"], .field select { width: 100%; height: 38px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--field); padding: 0 10px; }
+.field input[type="number"] { font-family: var(--font-mono); padding-right: 36px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+.seg label { position: relative; display: block; }
+.seg span { display: block; text-align: center; height: 38px; line-height: 38px; cursor: pointer; background: var(--field); font-size: 14px; }
+.seg input:checked + span { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+.checks { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.check { display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 14px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+
+/* pratinjau */
+.stage { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 16px; color: var(--mat-ink);
+  background-color: var(--mat);
+  background-image: linear-gradient(var(--mat-strong) 1px, transparent 1px), linear-gradient(90deg, var(--mat-strong) 1px, transparent 1px), linear-gradient(var(--mat-line) 1px, transparent 1px), linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px; }
+.stage-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.stage .lbl { color: var(--mat-ink); margin-bottom: 8px; }
+#summary { margin: 0; font-family: var(--font-mono); font-size: 13px; }
+.btn { height: 42px; padding: 0 20px; border-radius: 8px; border: 1px solid transparent; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--accent); border-color: var(--accent); height: 34px; padding: 0 14px; font-size: 13px; }
+.stage .btn.ghost { color: var(--mat-ink); border-color: var(--mat-ink); }
+#status { min-height: 1.5em; margin: 10px 0 0; font-size: 13px; }
+#status.bad { color: var(--warn); font-weight: 500; }
+#printnote { margin: 4px 0 0; font-size: 13px; }
+#hint { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; }
+#hint[hidden] { display: none !important; }
+.warn { margin: 10px 0 0; font-size: 13px; color: var(--warn); font-weight: 500; }
+.sheets { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; margin-top: 16px; }
+.sheet { margin: 0; width: min(100%, 460px); }
+.sheet.land { width: min(100%, 680px); }
+.sheet figcaption { display: flex; justify-content: space-between; font: 500 12px var(--font-mono); margin-bottom: 6px; }
+.sheet canvas { display: block; width: 100%; height: auto; background: #ffffff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 10px 26px rgba(0, 0, 0, .18); }
+.blank { padding: 48px 12px; text-align: center; font-size: 14px; width: 100%; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="top">
+  <h1>Tata Kartu Pelajar</h1>
+  <p>Unggah foto kartu pelajar, aplikasi langsung menyusunnya di kertas. Tinggal simpan PDF lalu cetak.</p>
+</div>
+
+<div class="app">
+  <div class="side">
+    <section class="block" aria-labelledby="h-foto">
+      <h2 class="lbl" id="h-foto">Foto kartu</h2>
+      <label class="drop" id="drop" for="file">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+        <strong>Pilih foto kartu</strong>
+        <span>atau seret ke sini, boleh banyak sekaligus</span>
+        <input class="sr" id="file" type="file" accept="image/*" multiple>
+      </label>
+      <p class="note" id="samplenote">Dua kartu contoh ini diganti begitu kamu unggah foto sendiri.</p>
+      <ul class="cards" id="cardlist"></ul>
+      <p class="empty" id="emptylist" hidden>Belum ada foto. Pilih foto kartu di atas.</p>
+    </section>
+
+    <section class="block" aria-labelledby="h-kertas">
+      <h2 class="lbl" id="h-kertas">Kertas dan kartu</h2>
+      <div class="grid2">
+        <div class="field full">
+          <span id="l-paper">Ukuran kertas</span>
+          <select id="paper" data-k="paper" aria-labelledby="l-paper">
+            <option value="A4">A4 (210 × 297 mm)</option>
+            <option value="F4">F4 / Folio (215 × 330 mm)</option>
+            <option value="Letter">Letter (216 × 279 mm)</option>
+            <option value="A3">A3 (297 × 420 mm)</option>
+          </select>
+        </div>
+        <div class="field full">
+          <span id="l-orient">Arah kertas</span>
+          <div class="seg" role="radiogroup" aria-labelledby="l-orient">
+            <label><input class="sr" type="radio" name="orient" value="portrait" data-k="orient" checked><span>Tegak</span></label>
+            <label><input class="sr" type="radio" name="orient" value="landscape" data-k="orient"><span>Mendatar</span></label>
+          </div>
+        </div>
+        <div class="field full">
+          <span id="l-preset">Ukuran kartu</span>
+          <select id="preset" aria-labelledby="l-preset">
+            <option value="85.6x54">CR80, 85,6 × 54 mm (kartu ID / ATM)</option>
+            <option value="86x54">86 × 54 mm</option>
+            <option value="90x55">90 × 55 mm (kartu nama)</option>
+            <option value="custom">Ukuran sendiri</option>
+          </select>
+        </div>
+        <div class="field">
+          <span>Lebar kartu</span>
+          <div class="inwrap"><input id="cardW" type="number" inputmode="decimal" step="0.1" min="20" max="400" data-k="cardW" aria-label="Lebar kartu dalam milimeter"><em>mm</em></div>
+        </div>
+        <div class="field">
+          <span>Tinggi kartu</span>
+          <div class="inwrap"><input id="cardH" type="number" inputmode="decimal" step="0.1" min="20" max="400" data-k="cardH" aria-label="Tinggi kartu dalam milimeter"><em>mm</em></div>
+        </div>
+        <div class="field">
+          <span>Margin kertas</span>
+          <div class="inwrap"><input id="margin" type="number" inputmode="decimal" step="1" min="0" max="60" data-k="margin" aria-label="Margin kertas dalam milimeter"><em>mm</em></div>
+        </div>
+        <div class="field">
+          <span>Jarak antar kartu</span>
+          <div class="inwrap"><input id="gap" type="number" inputmode="decimal" step="1" min="0" max="40" data-k="gap" aria-label="Jarak antar kartu dalam milimeter"><em>mm</em></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="h-tampil">
+      <h2 class="lbl" id="h-tampil">Tampilan di kertas</h2>
+      <div class="grid2">
+        <div class="field full">
+          <span id="l-fit">Foto di dalam kartu</span>
+          <select id="fit" data-k="fit" aria-labelledby="l-fit">
+            <option value="cover">Penuhi kartu (tepi bisa terpotong)</option>
+            <option value="contain">Muat utuh (bisa ada tepi putih)</option>
+            <option value="stretch">Regangkan sesuai ukuran kartu</option>
+          </select>
+        </div>
+        <div class="field">
+          <span>Sudut membulat</span>
+          <div class="inwrap"><input id="radius" type="number" inputmode="decimal" step="0.5" min="0" max="15" data-k="radius" aria-label="Radius sudut kartu dalam milimeter"><em>mm</em></div>
+        </div>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="outline" data-k="outline" checked> Garis potong tipis di tepi kartu</label>
+        <label class="check"><input type="checkbox" id="center" data-k="center" checked> Rata tengah di kertas</label>
+      </div>
+    </section>
+  </div>
+
+  <section class="stage" aria-labelledby="h-prev">
+    <div class="stage-head">
+      <div>
+        <h2 class="lbl" id="h-prev">Pratinjau</h2>
+        <p id="summary">Menyiapkan…</p>
+      </div>
+      <button class="btn" id="save" type="button">Simpan PDF</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p id="printnote"></p>
+    <div id="hint" hidden></div>
+    <p class="warn" id="warn" hidden></p>
+    <div class="sheets" id="sheets"></div>
+  </section>
+</div>
+
+<script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var PAPERS = { A4: [210, 297], F4: [215, 330], Letter: [216, 279], A3: [297, 420] };
+  var state = {
+    cards: [], paper: 'A4', orient: 'portrait',
+    cardW: 85.6, cardH: 54, margin: 10, gap: 4,
+    fit: 'cover', radius: 3, outline: true, center: true, turnAll: false
+  };
+  var uid = 0;
+  var last = null;
+  var dl = null;
+  var dlState = 'pending';
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function svg(path) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+  }
+  var ICON = {
+    rotate: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>'
+  };
+  function fmt(n) { return String(+(+n).toFixed(1)).replace('.', ','); }
+  function tick(ms) { return new Promise(function (r) { setTimeout(r, ms || 20); }); }
+
+  function loadImg(src) {
+    return new Promise(function (res, rej) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { rej(new Error('gagal memuat gambar')); };
+      im.src = src;
+    });
+  }
+
+  /* ---------- kartu contoh ---------- */
+  function sampleCanvas(i) {
+    var c = document.createElement('canvas');
+    c.width = 856; c.height = 540;
+    var x = c.getContext('2d');
+    var pal = [['#143a7b', '#2d6fd6'], ['#14513c', '#2f9a73']][i];
+    var g = x.createLinearGradient(0, 0, 856, 540);
+    g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]);
+    x.fillStyle = g; x.fillRect(0, 0, 856, 540);
+    x.fillStyle = 'rgba(255,255,255,0.14)'; x.fillRect(0, 0, 856, 96);
+    x.fillStyle = '#fff';
+    x.font = '700 30px Arial, sans-serif'; x.fillText('SMK CONTOH NEGERI 1', 32, 48);
+    x.font = '500 20px Arial, sans-serif'; x.fillText('KARTU PELAJAR', 32, 78);
+    x.textAlign = 'right'; x.font = '600 18px Arial, sans-serif'; x.fillText('CONTOH', 824, 48); x.textAlign = 'left';
+    x.fillStyle = 'rgba(255,255,255,0.92)'; x.fillRect(32, 128, 190, 250);
+    x.fillStyle = '#9fb0c9';
+    x.beginPath(); x.arc(127, 214, 44, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.ellipse(127, 378, 76, 62, 0, Math.PI, Math.PI * 2); x.fill();
+    var rows = [['Nama', 'Nama Siswa Contoh'], ['NIS', '0012345' + i], ['Kelas', i ? 'XI TKR 2' : 'X TKR 1']];
+    rows.forEach(function (r, k) {
+      x.fillStyle = 'rgba(255,255,255,0.72)'; x.font = '500 18px Arial, sans-serif'; x.fillText(r[0], 250, 152 + k * 76);
+      x.fillStyle = '#fff'; x.font = '600 28px Arial, sans-serif'; x.fillText(r[1], 250, 184 + k * 76);
+    });
+    x.fillStyle = '#fff'; x.fillRect(32, 408, 792, 94);
+    var seed = 7 + i * 13, px = 52;
+    x.fillStyle = '#111';
+    while (px < 800) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      var bw = 2 + (seed % 5), gp = 2 + ((seed >> 4) % 4);
+      x.fillRect(px, 420, bw, 70);
+      px += bw + gp;
+    }
+    return c;
+  }
+
+  /* ---------- tata letak ---------- */
+  //#layout-start
+  function boxFor(card, st) {
+    var L = Math.max(st.cardW, st.cardH), S = Math.min(st.cardW, st.cardH);
+    var natPortrait = card.img.naturalHeight > card.img.naturalWidth;
+    var turned = card.turn !== st.turnAll;
+    var portrait = natPortrait !== turned;
+    return { w: portrait ? S : L, h: portrait ? L : S, turned: turned };
+  }
+  function paperSize(st) {
+    var p = PAPERS[st.paper], land = st.orient === 'landscape';
+    return { pw: land ? p[1] : p[0], ph: land ? p[0] : p[1] };
+  }
+  function capacity(st, w, h) {
+    var ps = paperSize(st), aw = ps.pw - 2 * st.margin, ah = ps.ph - 2 * st.margin;
+    var cols = Math.max(0, Math.floor((aw + st.gap) / (w + st.gap)));
+    var rows = Math.max(0, Math.floor((ah + st.gap) / (h + st.gap)));
+    return { cols: cols, rows: rows, n: cols * rows };
+  }
+  function computeLayout(st) {
+    var ps = paperSize(st), pw = ps.pw, ph = ps.ph;
+    var m = st.margin, g = st.gap, aw = pw - 2 * m, ah = ph - 2 * m;
+    var items = [], oversize = false;
+    st.cards.forEach(function (c) {
+      var b = boxFor(c, st);
+      if (b.w > aw + 0.01 || b.h > ah + 0.01) oversize = true;
+      for (var i = 0; i < c.copies; i++) items.push({ card: c, w: b.w, h: b.h, turned: b.turned });
+    });
+    var pagesRows = [], rows = [], used = 0, row = null;
+    function commit() {
+      if (!row) return;
+      var nu = rows.length ? used + g + row.h : row.h;
+      if (rows.length && nu > ah + 0.01) {
+        pagesRows.push(rows); rows = [row]; used = row.h;
+      } else {
+        rows.push(row); used = nu;
+      }
+      row = null;
+    }
+    items.forEach(function (it) {
+      if (row) {
+        var nw = row.w + g + it.w;
+        if (nw <= aw + 0.01) { row.items.push(it); row.w = nw; row.h = Math.max(row.h, it.h); return; }
+        commit();
+      }
+      row = { items: [it], w: it.w, h: it.h };
+    });
+    commit();
+    if (rows.length) pagesRows.push(rows);
+    var pages = pagesRows.map(function (rs) {
+      var ch = rs.reduce(function (a, r) { return a + r.h; }, 0) + g * (rs.length - 1);
+      var y = st.center ? m + Math.max(0, (ah - ch) / 2) : m;
+      var placed = [];
+      rs.forEach(function (r) {
+        var x = st.center ? m + Math.max(0, (aw - r.w) / 2) : m;
+        r.items.forEach(function (it) {
+          placed.push({ card: it.card, x: x, y: y, w: it.w, h: it.h, turned: it.turned });
+          x += it.w + g;
+        });
+        y += r.h + g;
+      });
+      return placed;
+    });
+    return { pw: pw, ph: ph, pages: pages, total: items.length, oversize: oversize };
+  }
+  //#layout-end
+
+  /* ---------- gambar ke canvas ---------- */
+  function rr(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (r <= 0) { ctx.rect(x, y, w, h); return; }
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawImg(ctx, card, x, y, w, h, turned) {
+    var img = card.img, iw = img.naturalWidth, ih = img.naturalHeight;
+    ctx.save();
+    ctx.translate(x + w / 2, y + h / 2);
+    var bw = w, bh = h;
+    if (turned) { ctx.rotate(Math.PI / 2); bw = h; bh = w; }
+    var dw, dh;
+    if (state.fit === 'stretch') { dw = bw; dh = bh; }
+    else {
+      var sc = state.fit === 'cover' ? Math.max(bw / iw, bh / ih) : Math.min(bw / iw, bh / ih);
+      dw = iw * sc; dh = ih * sc;
+    }
+    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+  }
+  function drawPage(ctx, items, s, W, H) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    items.forEach(function (it) {
+      var x = it.x * s, y = it.y * s, w = it.w * s, h = it.h * s;
+      var r = Math.min(state.radius * s, w / 2, h / 2);
+      ctx.save();
+      rr(ctx, x, y, w, h, r);
+      ctx.clip();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, w, h);
+      drawImg(ctx, it.card, x, y, w, h, it.turned);
+      ctx.restore();
+      if (state.outline) {
+        ctx.save();
+        rr(ctx, x, y, w, h, r);
+        ctx.lineWidth = Math.max(1, 0.2 * s);
+        ctx.strokeStyle = '#8d9a95';
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
+  }
+
+  /* ---------- tampilan ---------- */
+  function setStatus(msg, bad) {
+    var s = $('status');
+    s.textContent = msg || '';
+    s.className = bad ? 'bad' : '';
+  }
+
+  function renderPreview(L) {
+    var box = $('sheets');
+    box.innerHTML = '';
+    if (!L.pages.length) {
+      box.appendChild(el('p', 'blank', 'Belum ada kartu untuk disusun.'));
+      return;
+    }
+    var S = 5;
+    L.pages.forEach(function (items, i) {
+      var fig = el('figure', 'sheet' + (L.pw > L.ph ? ' land' : ''));
+      var cap = el('figcaption');
+      cap.appendChild(el('span', null, 'Lembar ' + (i + 1) + ' dari ' + L.pages.length));
+      cap.appendChild(el('span', null, items.length + ' kartu'));
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(L.pw * S); cv.height = Math.round(L.ph * S);
+      cv.setAttribute('role', 'img');
+      cv.setAttribute('aria-label', 'Pratinjau lembar ' + (i + 1) + ' berisi ' + items.length + ' kartu');
+      drawPage(cv.getContext('2d'), items, S, cv.width, cv.height);
+      fig.appendChild(cap); fig.appendChild(cv);
+      box.appendChild(fig);
+    });
+  }
+
+  function update() {
+    var L = computeLayout(state);
+    last = L;
+    renderPreview(L);
+
+    var landTxt = state.orient === 'landscape' ? ' mendatar' : '';
+    var cur = state.cards.length ? boxFor(state.cards[0], state) : { w: Math.max(state.cardW, state.cardH), h: Math.min(state.cardW, state.cardH) };
+    var capCur = capacity(state, cur.w, cur.h);
+    var capFlip = capacity(state, cur.h, cur.w);
+    $('summary').textContent = L.total
+      ? L.total + ' kartu · ' + L.pages.length + ' lembar ' + state.paper + landTxt + ' · muat ' + capCur.n + ' per lembar (' + capCur.cols + ' × ' + capCur.rows + ')'
+      : 'Belum ada kartu';
+
+    var hint = $('hint');
+    hint.innerHTML = '';
+    if (state.cards.length && (capFlip.n > capCur.n || state.turnAll)) {
+      hint.hidden = false;
+      if (state.turnAll) {
+        hint.appendChild(el('span', null, 'Semua kartu sedang diputar 90°.'));
+        var b0 = el('button', 'btn ghost', 'Kembalikan arah');
+        b0.type = 'button';
+        b0.addEventListener('click', function () { state.turnAll = false; schedule(); });
+        hint.appendChild(b0);
+      } else {
+        hint.appendChild(el('span', null, 'Kalau kartu diputar 90°, muat ' + capFlip.n + ' per lembar (sekarang ' + capCur.n + ').'));
+        var b1 = el('button', 'btn ghost', 'Putar semua kartu');
+        b1.type = 'button';
+        b1.addEventListener('click', function () { state.turnAll = true; schedule(); });
+        hint.appendChild(b1);
+      }
+    } else {
+      hint.hidden = true;
+    }
+
+    var warn = $('warn');
+    if (L.oversize) {
+      warn.hidden = false;
+      warn.textContent = 'Ada kartu yang lebih besar dari area cetak. Kecilkan margin, atau pilih kertas yang lebih besar.';
+    } else warn.hidden = true;
+
+    $('printnote').textContent = 'Saat mencetak, pilih ukuran asli (100% atau "Actual size"), jangan "Fit to page", supaya kartu tetap ' + fmt(state.cardW) + ' × ' + fmt(state.cardH) + ' mm.';
+    $('save').disabled = !L.pages.length || dlState === 'none';
+    $('samplenote').hidden = !state.cards.some(function (c) { return c.sample; });
+    $('emptylist').hidden = state.cards.length > 0;
+  }
+
+  var raf = 0;
+  function schedule() {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = 0; update(); });
+  }
+
+  /* ---------- daftar kartu ---------- */
+  function ibtn(label, icon, cls) {
+    var b = el('button', cls || 'ib');
+    b.type = 'button';
+    b.setAttribute('aria-label', label);
+    b.title = label;
+    b.innerHTML = svg(ICON[icon]);
+    return b;
+  }
+  function buildList() {
+    var ul = $('cardlist');
+    ul.innerHTML = '';
+    state.cards.forEach(function (c) {
+      var li = el('li', 'card');
+      var th = el('div', 'thumb');
+      var im = new Image(); im.src = c.url; im.alt = '';
+      th.appendChild(im);
+
+      var body = el('div', 'cbody');
+      var top = el('div', 'ctop');
+      top.appendChild(el('span', 'cname', c.name));
+      if (c.sample) top.appendChild(el('span', 'badge', 'Contoh'));
+
+      var ctl = el('div', 'cctl');
+      ctl.appendChild(el('span', 'clabel', 'Jumlah cetak'));
+      var step = el('div', 'step');
+      var minus = ibtn('Kurangi jumlah ' + c.name, 'minus');
+      var plus = ibtn('Tambah jumlah ' + c.name, 'plus');
+      var inp = el('input');
+      inp.type = 'number'; inp.min = 1; inp.max = 99; inp.value = c.copies; inp.inputMode = 'numeric';
+      inp.setAttribute('aria-label', 'Jumlah cetak ' + c.name);
+      function setCopies(v) {
+        v = Math.max(1, Math.min(99, Math.round(v) || 1));
+        c.copies = v; inp.value = v; schedule();
+      }
+      minus.addEventListener('click', function () { setCopies(c.copies - 1); });
+      plus.addEventListener('click', function () { setCopies(c.copies + 1); });
+      inp.addEventListener('input', function () {
+        var v = Math.round(parseFloat(inp.value));
+        if (isFinite(v) && v >= 1 && v <= 99) { c.copies = v; schedule(); }
+      });
+      inp.addEventListener('change', function () { setCopies(parseFloat(inp.value)); });
+      step.appendChild(minus); step.appendChild(inp); step.appendChild(plus);
+
+      var turn = ibtn('Putar kartu ' + c.name + ' 90 derajat', 'rotate');
+      turn.setAttribute('aria-pressed', c.turn ? 'true' : 'false');
+      turn.addEventListener('click', function () {
+        c.turn = !c.turn;
+        turn.setAttribute('aria-pressed', c.turn ? 'true' : 'false');
+        schedule();
+      });
+      var del = ibtn('Hapus ' + c.name, 'trash');
+      del.addEventListener('click', function () {
+        state.cards = state.cards.filter(function (x) { return x !== c; });
+        if (!c.sample) { try { URL.revokeObjectURL(c.url); } catch (e) {} }
+        buildList(); schedule();
+      });
+
+      ctl.appendChild(step); ctl.appendChild(turn); ctl.appendChild(del);
+      body.appendChild(top); body.appendChild(ctl);
+      li.appendChild(th); li.appendChild(body);
+      ul.appendChild(li);
+    });
+  }
+
+  /* ---------- tambah foto ---------- */
+  function baseName(n) { return String(n || 'Kartu').replace(/\.[^.]+$/, '') || 'Kartu'; }
+  async function readFile(f) {
+    var url = URL.createObjectURL(f);
+    var img = await loadImg(url);
+    var big = Math.max(img.naturalWidth, img.naturalHeight);
+    if (big > 3200) {
+      var k = 3200 / big;
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      var type = f.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      var blob = await new Promise(function (r) { cv.toBlob(r, type, 0.92); });
+      if (blob) {
+        URL.revokeObjectURL(url);
+        url = URL.createObjectURL(blob);
+        img = await loadImg(url);
+      }
+    }
+    return { id: ++uid, url: url, img: img, name: baseName(f.name), copies: 1, turn: false, sample: false };
+  }
+  async function addFiles(files) {
+    var list = Array.prototype.filter.call(files || [], function (f) { return /^image\//.test(f.type); });
+    if (!list.length) { setStatus('Pilih file gambar (JPG atau PNG).', true); return; }
+    setStatus('Memuat ' + list.length + ' foto…');
+    var added = [], failed = 0;
+    for (var i = 0; i < list.length; i++) {
+      try { added.push(await readFile(list[i])); } catch (e) { failed++; }
+    }
+    if (added.length) {
+      state.cards = state.cards.filter(function (c) { return !c.sample; }).concat(added);
+      buildList(); schedule();
+    }
+    setStatus(failed ? failed + ' foto gagal dibuka.' : '', !!failed);
+  }
+
+  /* ---------- simpan PDF ---------- */
+  async function savePdf() {
+    if (!window.jspdf || !window.jspdf.jsPDF) { setStatus('Pustaka PDF belum termuat. Muat ulang halaman ini.', true); return; }
+    if (dlState === 'pending') { setStatus('Fitur simpan masih disiapkan, coba lagi sebentar.', true); return; }
+    if (!dl) { setStatus('Fitur simpan hanya jalan di aplikasi Windows.', true); return; }
+    var L = computeLayout(state);
+    if (!L.pages.length) return;
+    var btn = $('save');
+    btn.disabled = true;
+    setStatus('Menyiapkan PDF…');
+    await tick(40);
+    try {
+      var wIn = L.pw / 25.4, hIn = L.ph / 25.4;
+      var dpi = Math.min(300, Math.floor(Math.sqrt(24e6 / (wIn * hIn))));
+      var s = dpi / 25.4;
+      var W = Math.round(L.pw * s), H = Math.round(L.ph * s);
+      var cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      var ctx = cv.getContext('2d');
+      var sh = Math.min(L.pw, L.ph), lg = Math.max(L.pw, L.ph);
+      var ori = L.pw > L.ph ? 'l' : 'p';
+      var doc = null;
+      for (var i = 0; i < L.pages.length; i++) {
+        setStatus('Menyusun lembar ' + (i + 1) + ' dari ' + L.pages.length + '…');
+        drawPage(ctx, L.pages[i], s, W, H);
+        var data = cv.toDataURL('image/jpeg', 0.92);
+        if (!doc) doc = new window.jspdf.jsPDF({ orientation: ori, unit: 'mm', format: [sh, lg], compress: true });
+        else doc.addPage([sh, lg], ori);
+        doc.addImage(data, 'JPEG', 0, 0, L.pw, L.ph, undefined, 'FAST');
+        await tick(10);
+      }
+      var blob = doc.output('blob');
+      setStatus('Menunggu konfirmasi simpan…');
+      await dl.save({ filename: 'kartu-pelajar-' + state.paper + '.pdf', data: blob });
+      setStatus('PDF tersimpan, siap dicetak.');
+    } catch (e) {
+      if (e && e.code === 'declined') setStatus('Penyimpanan dibatalkan.');
+      else if (e && e.code === 'rate_limited') setStatus('Tunggu sebentar lalu coba simpan lagi.', true);
+      else setStatus('PDF gagal dibuat. Coba kurangi jumlah foto atau ukuran kertas.', true);
+    } finally {
+      btn.disabled = !(last && last.pages.length) || dlState === 'none';
+    }
+  }
+
+  /* ---------- pengaturan ---------- */
+  var PRESETS = { '85.6x54': [85.6, 54], '86x54': [86, 54], '90x55': [90, 55] };
+  function syncPreset() {
+    var key = 'custom';
+    Object.keys(PRESETS).forEach(function (k) {
+      if (PRESETS[k][0] === state.cardW && PRESETS[k][1] === state.cardH) key = k;
+    });
+    $('preset').value = key;
+  }
+  function bindSettings() {
+    ['paper', 'cardW', 'cardH', 'margin', 'gap', 'fit', 'radius'].forEach(function (k) {
+      var e = $(k); if (e) e.value = state[k];
+    });
+    $('outline').checked = state.outline;
+    $('center').checked = state.center;
+    syncPreset();
+    document.querySelectorAll('[data-k]').forEach(function (e) {
+      var k = e.getAttribute('data-k');
+      function onChange() {
+        var v;
+        if (e.type === 'checkbox') v = e.checked;
+        else if (e.type === 'radio') { if (!e.checked) return; v = e.value; }
+        else if (e.type === 'number') {
+          v = parseFloat(e.value);
+          if (!isFinite(v) || v < (parseFloat(e.min) || 0)) return;
+        } else v = e.value;
+        state[k] = v;
+        if (k === 'cardW' || k === 'cardH') syncPreset();
+        schedule();
+      }
+      e.addEventListener('input', onChange);
+      e.addEventListener('change', onChange);
+    });
+    $('preset').addEventListener('change', function (ev) {
+      var p = PRESETS[ev.target.value];
+      if (!p) return;
+      state.cardW = p[0]; state.cardH = p[1];
+      $('cardW').value = p[0]; $('cardH').value = p[1];
+      schedule();
+    });
+  }
+
+  function bindUpload() {
+    var drop = $('drop'), file = $('file');
+    file.addEventListener('change', function () {
+      addFiles(file.files).then(function () { file.value = ''; });
+    });
+    ['dragenter', 'dragover'].forEach(function (n) {
+      drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (n) {
+      drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function (e) { addFiles(e.dataTransfer && e.dataTransfer.files); });
+  }
+
+  async function init() {
+    bindSettings();
+    bindUpload();
+    $('save').addEventListener('click', savePdf);
+    try {
+      for (var i = 0; i < 2; i++) {
+        var url = sampleCanvas(i).toDataURL('image/png');
+        var img = await loadImg(url);
+        state.cards.push({ id: ++uid, url: url, img: img, name: i ? 'Kartu contoh B' : 'Kartu contoh A', copies: i ? 4 : 5, turn: false, sample: true });
+      }
+    } catch (e) { /* tanpa contoh */ }
+    buildList();
+    update();
+  }
+
+  if (window.desktop && window.desktop.saveFile) {
+    dl = {
+      save: async function (req) {
+        var buf = new Uint8Array(await req.data.arrayBuffer());
+        var r = await window.desktop.saveFile(req.filename, buf);
+        if (r && r.canceled) { var err = new Error('declined'); err.code = 'declined'; throw err; }
+        return { status: 'saved' };
+      }
+    };
+    dlState = 'ok';
+  } else {
+    dlState = 'none';
+    setStatus('Fitur simpan hanya jalan di aplikasi Windows.', true);
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
