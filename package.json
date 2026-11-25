@@ -1,16 +1,18 @@
 {
   "name": "tata-kartu-pelajar",
-  "version": "1.0.0",
-  "description": "Susun foto kartu pelajar otomatis di kertas, simpan PDF siap cetak",
+  "version": "1.1.0",
+  "description": "Susun kartu pelajar dari data Excel dan desain Canva, simpan PDF siap cetak",
   "main": "main.js",
   "author": "Tata Kartu Pelajar",
   "license": "MIT",
   "scripts": {
+    "postinstall": "node copy-libs.js",
     "start": "electron .",
-    "dist": "electron-builder --win --x64 --publish never"
+    "dist": "node copy-libs.js && electron-builder --win --x64 --publish never"
   },
   "dependencies": {
-    "jspdf": "2.5.2"
+    "jspdf": "2.5.2",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -19,13 +21,9 @@
   "build": {
     "appId": "id.tatakartu.app",
     "productName": "Tata Kartu Pelajar",
-    "files": ["main.js", "preload.js", "index.html"],
+    "files": ["main.js", "preload.js", "index.html", "lib/**/*"],
     "directories": { "output": "dist" },
     "win": { "target": ["nsis", "portable"] },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
-    }
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true }
   }
 }
